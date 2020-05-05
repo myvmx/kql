@@ -1,1 +1,29 @@
+// disk Alert based on resourcegroup and report just computers that have hit the threshold
+// it also includes the actual GB space remaining on the drive letter as well
+// Time frame is based on user choice and not in the query
 
+let rg_name = "template_replace_me"; // put you resource group name here
+let disk_percent = 5;  // set what level you want to be alerted at
+let resource_group = strcat("resourcegroups/",rg_name);// build resourcegroup name
+
+// get disk percent first and store as variable
+let diskpercent = Perf 
+| where _ResourceId contains resource_group
+| where ObjectName == "LogicalDisk" and CounterName == "% Free Space" and InstanceName has ":"
+| summarize Free_Space_Percent = avg(CounterValue) by Computer, InstanceName, ResourceGroupName = rg_name
+| where Free_Space_Percent < disk_percent;
+
+// get disk MB space and store as variable
+let diskspace = Perf 
+| where _ResourceId contains resource_group
+| where ObjectName == "LogicalDisk" and CounterName == "Free Megabytes" and InstanceName has ":"
+| summarize Free_Space_MB = avg(CounterValue) by Computer, InstanceName, ResourceGroupName = rg_name
+| project Computer, InstanceName, FreeGB = Free_Space_MB/1024;
+
+// join the two tables together to bring back results with drive letter with free % and MB
+diskpercent
+| join (diskspace) on Computer, InstanceName
+| project Computer, InstanceName, Free_Space_Percent, FreeGB, ResourceGroupName
+
+
+// Information projected Computer, Free_Space_Percent, FreeGB, ResourceGroupName
