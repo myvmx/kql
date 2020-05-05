@@ -1,0 +1,10 @@
+// Using microsoft new way of getting performance info from insights metrics
+
+let comp = "your computer name";
+InsightsMetrics
+| where Computer contains comp 
+| where Namespace == "LogicalDisk" and Name contains "FreeSpaceMB" 
+| extend driveletter = parse_json(Tags).["vm.azm.ms/mountId"] 
+| summarize avg(Val) by tostring(driveletter)
+
+// returns drive letter and average FreeSpaceMB
