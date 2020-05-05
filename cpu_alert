@@ -1,0 +1,15 @@
+//CPU Alert based on resourcegroup and report just computers that have hit the threshold
+// Time frame is based on user choice and not in the query
+
+let rg_name = "template_replace_me"; // put you resource group name here
+let cpu_percent = 90; // set what level you want to be alerted at
+let resource_group = strcat("resourcegroups/",rg_name); // build resourcegroup name
+
+Perf 
+| where _ResourceId contains resource_group
+| where CounterName == "% Processor Time"
+| where InstanceName == "_Total" 
+| summarize Average_CPU =avg(CounterValue) by Computer, ResourceGroupName = rg_name
+| where Average_CPU  > cpu_percent
+
+// returns Computer Name, Average CPU, Resource Group Name
