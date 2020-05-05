@@ -1,0 +1,8 @@
+let rg_name = "template_replace_me";
+let mem_percent = 90;
+let resource_group = strcat("resourcegroups/",rg_name);
+
+Perf | where _ResourceId contains resource_group 
+| where ObjectName == "Memory" and CounterName == "% Committed Bytes In Use"
+| summarize Average_Mem = avg(CounterValue) by Computer, ResourceGroupName = rg_name   
+| where Average_Mem  > mem_percent
