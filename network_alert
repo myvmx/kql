@@ -1,21 +1,15 @@
-// Network Adapter to change bytes per second to megabits per sec to match network card speed measurement
+// Network Adapter to change bytes per second to megabits per sec to match network card speed measurement for both combined recieved and sent
 // Time frame is based on user choice and not in the query
 
 let rg_name = "template_replace_me"; // put you resource group name here
 let network_alert = 90; // has to be number
 let resource_group = strcat("resourcegroups/",rg_name); // build resourcegroup name
 
-Perf 
-| where _ResourceId contains resource_group
-| where CounterName == "% Processor Time"
-| where InstanceName == "_Total" 
-| summarize Average_CPU =avg(CounterValue) by Computer, ResourceGroupName = rg_name
-| where Average_CPU  > cpu_percent
-
-// returns Computer Name, Average CPU, Resource Group Name
-
 Perf
 | where _ResourceId contains resource_group
 | where ObjectName == "Network Adapter"
 | where CounterName == "Bytes Received/sec" or CounterName == "Bytes Sent/sec"
 | extend megabits = CounterValue/125000 
+| where megabits > network_alert
+
+// returns Computer Name, mega bits, Resource Group Name
