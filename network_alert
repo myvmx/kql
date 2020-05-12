@@ -13,3 +13,7 @@ Perf
 | where megabits > network_alert
 
 // returns Computer Name, mega bits, Resource Group Name
+
+// Can use belong one for Total/sec as well instead of adding both values
+// | where ObjectName == "Network Interface" and CounterName == "Bytes Total/sec" 
+
