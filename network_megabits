@@ -1,0 +1,22 @@
+// Combine bytes sent and rec to work out total network then convert to megabits
+
+Perf
+| where Computer contains "{computername}"
+| where ObjectName == "Network Adapter"
+| where CounterName == "Bytes Received/sec" or CounterName == "Bytes Sent/sec" 
+
+Perf
+| where Computer contains "{computername}"
+| where ObjectName == "Network Adapter"
+| where CounterName == "Bytes Received/sec"
+| extend rec_megabits = CounterValue/125000
+| project Computer, TimeGenerated, rec_megabits 
+|join kind= inner (
+   Perf
+   | where Computer contains "{computername}"  
+   | where ObjectName == "Network Adapter"
+   | where CounterName == "Bytes Sent/sec"
+   | extend sent_megabits = CounterValue/125000
+   | project Computer, TimeGenerated, sent_megabits 
+) on Computer, TimeGenerated
+| project Computer, TimeGenerated, sent_megabits, rec_megabits
