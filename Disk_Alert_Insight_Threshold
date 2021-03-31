@@ -1,0 +1,25 @@
+// Disk alert which uses both disk percentage and disk space remaining
+// Alerts only if both values passed a threshold
+
+InsightsMetrics | where Computer == "vmss-vm001" and Origin == "vm.azm.ms" and Namespace == "LogicalDisk"
+
+let diskspace = InsightsMetrics
+| where Computer == "vmss-vm001"
+| where Origin == "vm.azm.ms" and Namespace == "LogicalDisk" and Name == "FreeSpaceMB"
+| extend DriveLetter = parse_json(Tags).["vm.azm.ms/mountId"]
+| extend TotalSpaceGB = parse_json(Tags).["vm.azm.ms/diskSizeMB"]/1024
+| summarize Free_Space_MB = avg(Val) by Computer, tostring(DriveLetter), TotalSpaceGB
+| project Computer, DriveLetter, FreeGB = Free_Space_MB/1024, TotalSpaceGB
+| where FreeGB < 4;
+
+let diskpercent = InsightsMetrics
+| where Computer == "vmss-vm001"
+| where Origin == "vm.azm.ms" and Namespace == "LogicalDisk" and Name == "FreeSpacePercentage"
+| extend DriveLetter = parse_json(Tags).["vm.azm.ms/mountId"]
+| summarize Free_Disk_Percent = avg(Val) by Computer, tostring(DriveLetter)
+| project Computer, DriveLetter, Free_Disk_Percent
+| where Free_Disk_Percent > 80 ;
+
+diskpercent
+| join (diskspace) on Computer, DriveLetter
+| project Computer, DriveLetter, Free_Disk_Percent, FreeGB
